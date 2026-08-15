@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>llasrr — music</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="../pfp.jpg" type="image/x-icon">
+</head>
+<body>
+  <a class="back-link" href="/">‹ home</a>
+
+  <main>
+    <div id="player-wrap">
+      <div id="player"></div>
+    </div>
+
+    <div class="info">
+      <p id="playlist-name">&nbsp;</p>
+      <h1 id="song-title">Loading…</h1>
+      <p id="counter">&nbsp;</p>
+      <p id="next-up">&nbsp;</p>
+    </div>
+
+    <div class="controls">
+      <button id="prev" aria-label="Previous">⏮</button>
+      <button id="playpause" aria-label="Play/Pause">▶</button>
+      <button id="next" aria-label="Next">⏭</button>
+      <button id="reshuffle" aria-label="Reshuffle">⤮</button>
+    </div>
+  </main>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="app.js"></script>
+</body>
+</html>

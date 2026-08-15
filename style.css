@@ -1,0 +1,179 @@
+body {
+    background-color: black;
+    color: #DCDCDC;
+    height: 100vh;            /* Full height of the screen */
+    margin: 0;                /* Remove default spacing */
+    display: flex;            /* Use flexbox layout */
+    flex-direction:column;
+    justify-content: center;  /* Center horizontally */
+    align-items: center;      /* Center vertically */
+    text-align: center;       /* Center text inside the div */
+    font-family: Consolas, "Courier New", monospace; /* "When in doubt, use Helvetica" - Reddit user 13 years ago (he is wrong) */
+}
+
+a {
+    color: #f4abba;                               
+    text-decoration: none;                         /* Remove underline */
+}
+
+a:hover {
+    text-decoration: underline;                   /* Add underline on hover */
+}
+
+#ghost {
+  display: block;
+  margin: 0 auto;
+  transform: translateX(-55px); /* move left or right */
+}
+
+.bottom-text {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 14px;
+}
+
+.about-page {
+    max-width: 900px;          /* keeps content from stretching too wide */
+    margin: 40px auto;         /* centers horizontally and adds top/bottom space */
+    padding: 0 20px;           /* space from edges */
+    text-align: center;
+    color: #DCDCDC;
+}
+
+/* Profile section */
+.about-page .profile-container {
+    display: flex;             
+    align-items: flex-start;
+    gap: 20px;                 /* space between image and text */
+    margin-bottom: 40px;       /* space below profile */
+}
+
+.about-page .profile-image {
+    width: 250px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.about-page .profile-text {
+    flex: 1;
+    text-align: left;          /* paragraphs aligned left next to image */
+    padding: 0 10px;           
+}
+
+.about-page .profile-text h1 {
+    margin-top: 0;
+    font-size: 2em;
+}
+
+/* About content sections */
+.about-page .about-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;                 /* space between sections */
+}
+
+.about-page .about-content h3 {
+    margin-top: 0;
+    text-align: left;          /* headings aligned left for readability */
+    width: 100%;
+}
+
+.about-page .about-content p {
+    margin-top: 10px;
+    line-height: 1.5;
+    text-align: left;
+    width: 100%;
+}
+
+.bio-body {
+    background-color: black;
+    color: #DCDCDC;
+    font-family: Consolas, "Courier New", monospace;
+    margin: 0;
+    min-height: 100vh;              /* makes body fill the screen height */
+    display: flex;
+    justify-content: flex-start;    /* keep content near top, but not glued */
+    align-items: center;            /* center horizontally */
+    flex-direction: column;
+    padding: 60px 120px;            /* top/bottom and side padding */
+    line-height: 1.6;
+}
+
+
+
+.bio-body img {
+    width: 180px;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto 20px auto; /* centers image and adds space below */
+}
+
+.bio-body h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #A9A9AB
+}
+
+.bio-body h3 {
+    margin-top: 40px;
+    color: #7B6D6D; /* subtle blue for section titles */
+}
+
+.bio-body p {
+    max-width: 800px;
+    margin: 0 auto 20px auto;
+    text-align: justify;
+    color: #A9A9AB
+}
+
+.section-title {
+  color: #7B6D6D;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.section-title:hover {
+  color: #C3C3C5;
+}
+
+.section-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease, opacity 0.5s ease;
+  opacity: 0;
+}
+
+.section-content.open {
+  max-height: 500px; /* enough room for text */
+  opacity: 1;
+}
+.corner-btn {
+  position: fixed;
+  bottom: 15px;
+  z-index: 100;
+}
+
+.left-btn {
+  left: 15px;
+}
+
+.right-btn {
+  right: 15px;
+}
+
+.corner-btn img {
+  width: 70px; /* adjust this if needed */
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.corner-btn img:hover {
+  transform: scale(1.1);
+}
