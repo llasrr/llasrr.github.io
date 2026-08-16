@@ -9,6 +9,7 @@ body {
   padding: 24px;
   font-family: Consolas, "Courier New", monospace;
   box-sizing: border-box;
+  text-transform: lowercase;
 }
 
 * { box-sizing: border-box; }
@@ -55,11 +56,12 @@ main {
 }
 
 #playlist-name {
+  
   margin: 0 0 4px;
   font-size: 13px;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: #7B6D6D;
+  text-transform: lowercase;
+  color: #f4abba;
 }
 
 #song-title {
@@ -96,12 +98,12 @@ main {
 
 .controls button {
   background: none;
-  border: 1px solid #333;
-  color: #DCDCDC;
+  border: 0px solid #ffffff;
+  color: #ffffff;
   font-size: 18px;
   line-height: 1;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 0px;
   cursor: pointer;
   font-family: inherit;
 }

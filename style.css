@@ -8,6 +8,7 @@ body {
     justify-content: center;  /* Center horizontally */
     align-items: center;      /* Center vertically */
     text-align: center;       /* Center text inside the div */
+    
     font-family: Consolas, "Courier New", monospace; /* "When in doubt, use Helvetica" - Reddit user 13 years ago (he is wrong) */
 }
 
@@ -17,7 +18,7 @@ a {
 }
 
 a:hover {
-    text-decoration: underline;                   /* Add underline on hover */
+    text-decoration: none;                   /* Add underline on hover */
 }
 
 #ghost {
@@ -177,3 +178,4 @@ a:hover {
 .corner-btn img:hover {
   transform: scale(1.1);
 }
+
