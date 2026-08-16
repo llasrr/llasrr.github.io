@@ -2,6 +2,8 @@ let player;
 let songs = [];
 let queue = [];
 let currentIndex = 0;
+let userInitiatedPause = false;
+let autoResumeAttempts = 0;
 
 const els = {
   title: document.getElementById('song-title'),
@@ -50,9 +52,34 @@ window.onYouTubeIframeAPIReady = function () {
 };
 
 function onPlayerStateChange(e) {
-  if (e.data === YT.PlayerState.ENDED) playNext();
-  if (e.data === YT.PlayerState.PLAYING) els.playpause.textContent = '⏸';
-  if (e.data === YT.PlayerState.PAUSED) els.playpause.textContent = '▶';
+  if (e.data === YT.PlayerState.ENDED) {
+    autoResumeAttempts = 0;
+    playNext();
+  }
+
+  if (e.data === YT.PlayerState.PLAYING) {
+    els.playpause.textContent = '⏸';
+    autoResumeAttempts = 0;
+    updateMediaSessionPlaybackState('playing');
+  }
+
+  if (e.data === YT.PlayerState.PAUSED) {
+    els.playpause.textContent = '▶';
+    updateMediaSessionPlaybackState('paused');
+
+    // If the pause wasn't you tapping the button, the OS/browser likely
+    // paused it on its own (backgrounding, audio route change, network
+    // hiccup). Try to recover automatically, but cap retries so a genuine
+    // pause doesn't get fought forever.
+    if (!userInitiatedPause && autoResumeAttempts < 3) {
+      autoResumeAttempts++;
+      setTimeout(() => {
+        if (player && player.getPlayerState() === YT.PlayerState.PAUSED) {
+          player.playVideo();
+        }
+      }, 600);
+    }
+  }
 }
 
 // YouTube error codes: 2 = invalid id, 5 = HTML5 player error,
@@ -78,6 +105,8 @@ function updateInfo() {
   els.playlist.textContent = song.playlist;
   els.counter.textContent = `${currentIndex + 1} / ${queue.length}`;
   els.nextUp.innerHTML = `Next: <span>${escapeHtml(upNext.title)}</span>`;
+
+  updateMediaSessionMetadata(song);
 }
 
 function escapeHtml(str) {
@@ -88,6 +117,7 @@ function escapeHtml(str) {
 
 function playIndex(i) {
   currentIndex = (i + queue.length) % queue.length;
+  autoResumeAttempts = 0;
   player.loadVideoById(queue[currentIndex].id);
   updateInfo();
 }
@@ -109,6 +139,39 @@ els.reshuffle.addEventListener('click', () => {
 els.playpause.addEventListener('click', () => {
   if (!player) return;
   const state = player.getPlayerState();
-  if (state === YT.PlayerState.PLAYING) player.pauseVideo();
-  else player.playVideo();
+  if (state === YT.PlayerState.PLAYING) {
+    userInitiatedPause = true;
+    player.pauseVideo();
+  } else {
+    userInitiatedPause = false;
+    player.playVideo();
+  }
 });
+
+// When you come back to the tab/app, check if playback silently stopped
+// while backgrounded and try to recover it.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!player || userInitiatedPause) return;
+  if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+    player.playVideo();
+  }
+});
+
+// --- Media Session metadata only (not controls — those don't work
+// reliably with an embedded cross-origin player). Setting metadata and
+// playback state can still help some mobile browsers treat this as
+// legitimate active media and be less aggressive about pausing it. ---
+
+function updateMediaSessionMetadata(song) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: song.title,
+    artist: song.playlist,
+  });
+}
+
+function updateMediaSessionPlaybackState(state) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.playbackState = state;
+}
