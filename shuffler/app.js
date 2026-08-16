@@ -149,6 +149,7 @@ els.playpause.addEventListener('click', () => {
     userInitiatedPause = false;
     player.playVideo();
   }
+  setupMediaSessionActions();
 });
 
 // When you come back to the tab/app, check if playback silently stopped
