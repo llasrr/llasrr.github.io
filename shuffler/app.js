@@ -4,6 +4,7 @@ let queue = [];
 let currentIndex = 0;
 let userInitiatedPause = false;
 let autoResumeAttempts = 0;
+let wakeLock = null;
 
 const els = {
   title: document.getElementById('song-title'),
@@ -61,11 +62,13 @@ function onPlayerStateChange(e) {
     els.playpause.textContent = '⏸';
     autoResumeAttempts = 0;
     updateMediaSessionPlaybackState('playing');
+    requestWakeLock();
   }
 
   if (e.data === YT.PlayerState.PAUSED) {
     els.playpause.textContent = '▶';
     updateMediaSessionPlaybackState('paused');
+    releaseWakeLock();
 
     // If the pause wasn't you tapping the button, the OS/browser likely
     // paused it on its own (backgrounding, audio route change, network
@@ -149,11 +152,15 @@ els.playpause.addEventListener('click', () => {
 });
 
 // When you come back to the tab/app, check if playback silently stopped
-// while backgrounded and try to recover it.
+// while backgrounded and try to recover it. Also re-acquire the wake
+// lock, since browsers auto-release it whenever the tab is hidden.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
-  if (!player || userInitiatedPause) return;
-  if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+  if (!player) return;
+
+  if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+    requestWakeLock();
+  } else if (!userInitiatedPause && player.getPlayerState() === YT.PlayerState.PAUSED) {
     player.playVideo();
   }
 });
@@ -174,4 +181,28 @@ function updateMediaSessionMetadata(song) {
 function updateMediaSessionPlaybackState(state) {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.playbackState = state;
+}
+
+// --- Screen Wake Lock: keeps the screen from dimming/locking while
+// a song is actively playing. Browsers release it automatically when
+// the tab is hidden or the video pauses, so we re-request it whenever
+// playback resumes. ---
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null;
+    });
+  } catch (err) {
+    console.warn('Wake lock request failed:', err);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release();
+    wakeLock = null;
+  }
 }
