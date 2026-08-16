@@ -44,7 +44,7 @@ window.onYouTubeIframeAPIReady = function () {
       videoId: queue[0].id,
       playerVars: { autoplay: 1, playsinline: 1 },
       events: {
-        onReady: updateInfo,
+        onReady: () => { updateInfo(); setupMediaSessionActions(); },
         onStateChange: onPlayerStateChange,
         onError: onPlayerError,
       },
@@ -176,6 +176,25 @@ function updateMediaSessionMetadata(song) {
     title: song.title,
     artist: song.playlist,
   });
+}
+
+function setupMediaSessionActions() {
+  if (!('mediaSession' in navigator)) return;
+
+  const handlers = {
+    play: () => player.playVideo(),
+    pause: () => player.pauseVideo(),
+    previoustrack: playPrev,
+    nexttrack: playNext,
+  };
+
+  for (const [action, handler] of Object.entries(handlers)) {
+    try {
+      navigator.mediaSession.setActionHandler(action, handler);
+    } catch (err) {
+      console.warn(`Media session action "${action}" not supported:`, err);
+    }
+  }
 }
 
 function updateMediaSessionPlaybackState(state) {
