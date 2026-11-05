@@ -18,7 +18,7 @@ body {
   position: fixed;
   top: 20px;
   left: 20px;
-  color: #f4abba;
+  color: #ffc04e;
   text-decoration: none;
   font-size: 14px;
 }
@@ -61,7 +61,7 @@ main {
   font-size: 13px;
   letter-spacing: 0.02em;
   text-transform: lowercase;
-  color: #f4abba;
+  color: #ffc04e;
 }
 
 #song-title {
@@ -87,7 +87,7 @@ main {
 }
 
 #next-up span {
-  color: #f4abba;
+  color: #ffc04e;
 }
 
 .controls {
@@ -109,12 +109,12 @@ main {
 }
 
 .controls button:hover {
-  border-color: #f4abba;
-  color: #f4abba;
+  border-color: #ffc04e;
+  color: #ffc04e;
 }
 
 .controls button:focus-visible {
-  outline: 2px solid #f4abba;
+  outline: 2px solid #ffc04e;
   outline-offset: 2px;
 }
 
