@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-:root{--bg:#0e0e10;--panel:#18181b;--panel2:#1f1f23;--line:#2f2f35;--text:#efeff1;--muted:#adadb8;--accent:#9147ff;--ok:#00c853;--fs:16px;color-scheme:dark}
+:root{--bg:#0e0e10;--panel:#18181b;--panel2:#1f1f23;--line:#2f2f35;--text:#efeff1;--muted:#adadb8;--accent:#9147ff;--ok:#00c853;--fs:16px;--es:36px;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 [hidden]{display:none!important}
@@ -53,7 +53,7 @@ header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset
 .reply{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .badge{height:18px;width:18px;vertical-align:middle;margin-right:3px}
 .name{font-weight:700}
-.emote{height:28px;width:auto;vertical-align:middle;margin:-4px 1px}
+.emote{height:var(--es);width:auto;vertical-align:middle;margin:-.25em 1px}
 .estack{position:relative;display:inline-block;vertical-align:middle}
 .estack .zw{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;margin:0}
 .link{color:#a970ff;text-decoration:underline}
@@ -132,6 +132,9 @@ header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset
     <label>Text size
       <input id="fs" type="range" min="13" max="24" step="1">
     </label>
+    <label>Emote size
+      <input id="es" type="range" min="20" max="64" step="2">
+    </label>
     <div class="row">
       <button id="reload">Reload 7TV emotes</button>
       <button id="logout" class="danger">Log out</button>
@@ -175,6 +178,7 @@ const S = {
 };
 const chat = $('chat');
 let toastTimer = null;
+let emoteSize = 36; // px, set from the slider in settings
 
 function toast(msg) {
   const t = $('toast');
@@ -390,6 +394,9 @@ function sys(text) {
   d.textContent = text;
   push(d);
 }
+function twitchEmoteUrl(id) {
+  return 'https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(id) + '/default/dark/' + (emoteSize > 32 ? '3.0' : '2.0');
+}
 function renderBody(text, emotesTag, isSelf) {
   const frag = document.createDocumentFragment();
   const chars = Array.from(text);
@@ -422,9 +429,9 @@ function renderBody(text, emotesTag, isSelf) {
       if (!tok) continue;
       if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(tok)); continue; }
       const e = S.emotes.get(tok);
-      if (e) { addEmote('https://cdn.7tv.app/emote/' + e.id + '/2x.webp', tok, e.zw); continue; }
+      if (e) { addEmote('https://cdn.7tv.app/emote/' + e.id + '/' + (emoteSize > 32 ? '3x' : '2x') + '.webp', tok, e.zw); continue; }
       const tid = isSelf && S.twitchEmotes.get(tok);
-      if (tid) { addEmote('https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(tid) + '/default/dark/2.0', tok, false); continue; }
+      if (tid) { addEmote(twitchEmoteUrl(tid), tok, false); continue; }
       prev = null;
       if (/^https?:\/\//i.test(tok)) {
         const sp = document.createElement('span'); sp.className = 'link'; sp.textContent = tok; frag.appendChild(sp);
@@ -437,7 +444,7 @@ function renderBody(text, emotesTag, isSelf) {
   for (const r of ranges) {
     if (r[0] < i) continue;
     if (r[0] > i) flush(chars.slice(i, r[0]).join(''));
-    addEmote('https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(r[2]) + '/default/dark/2.0', chars.slice(r[0], r[1] + 1).join(''), false);
+    addEmote(twitchEmoteUrl(r[2]), chars.slice(r[0], r[1] + 1).join(''), false);
     i = r[1] + 1;
   }
   if (i < chars.length) flush(chars.slice(i).join(''));
@@ -706,6 +713,13 @@ $('fs').oninput = () => {
   document.documentElement.style.setProperty('--fs', $('fs').value + 'px');
   ls.set('fs', $('fs').value);
 };
+$('es').value = ls.get('es') || '36';
+function applyEmoteSize() {
+  emoteSize = +$('es').value || 36;
+  document.documentElement.style.setProperty('--es', emoteSize + 'px');
+}
+applyEmoteSize();
+$('es').oninput = () => { applyEmoteSize(); ls.set('es', $('es').value); };
 $('composer').addEventListener('submit', e => {
   e.preventDefault();
   const inp = $('msgInput');
