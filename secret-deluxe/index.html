@@ -169,6 +169,7 @@ const S = {
   channel: null, channelId: null, chanReady: null,
   ws: null, gen: 0, retry: 0,
   emotes: new Map(), badges: {}, room: {},
+  twitchEmotes: new Map(), emoteSets: '', info7: '', infoTw: '',
   selected: null, atBottom: true, unread: 0,
   myColor: '', myBadges: ''
 };
@@ -275,7 +276,11 @@ async function boot() {
 async function helix(path, opts) {
   opts = opts || {};
   const url = new URL('https://api.twitch.tv/helix' + path);
-  for (const k in (opts.query || {})) url.searchParams.set(k, opts.query[k]);
+  for (const k in (opts.query || {})) {
+    const v = opts.query[k];
+    if (Array.isArray(v)) v.forEach(x => url.searchParams.append(k, x));
+    else url.searchParams.set(k, v);
+  }
   const headers = { 'Authorization': 'Bearer ' + S.token, 'Client-Id': CLIENT_ID };
   if (opts.body) headers['Content-Type'] = 'application/json';
   const r = await fetch(url.toString(), {
@@ -311,7 +316,11 @@ async function resolveChannel(name) {
   if (!d || !d.data || !d.data[0]) throw new Error('Channel not found');
   if (S.channel === name) S.channelId = d.data[0].id;
 }
+function renderInfo() {
+  $('emoteInfo').textContent = [S.info7, S.infoTw].filter(Boolean).join(' · ');
+}
 async function loadEmotes() {
+  const ch = S.channel;
   const map = new Map();
   let ok = 0;
   const add = list => {
@@ -329,8 +338,27 @@ async function loadEmotes() {
     const r = await fetch('https://7tv.io/v3/users/twitch/' + S.channelId);
     if (r.ok) { const j = await r.json(); add(j.emote_set && j.emote_set.emotes); ok++; }
   } catch (e) {}
+  if (S.channel !== ch) return;
   S.emotes = map;
-  $('emoteInfo').textContent = ok ? '7TV ' + map.size : '7TV unavailable';
+  S.info7 = ok ? '7TV ' + map.size : '7TV unavailable';
+  renderInfo();
+}
+// Twitch's own emotes by name. Used for messages you send yourself, because
+// Twitch doesn't echo your own messages back with emote positions.
+async function loadTwitchEmotes() {
+  const ch = S.channel;
+  const map = new Map();
+  const add = d => { for (const e of (d && d.data) || []) if (e && e.id && e.name) map.set(e.name, e.id); };
+  try { add(await helix('/chat/emotes/global')); } catch (e) {}
+  try { add(await helix('/chat/emotes', { query: { broadcaster_id: S.channelId } })); } catch (e) {}
+  const ids = S.emoteSets ? S.emoteSets.split(',').filter(Boolean) : [];
+  for (let i = 0; i < ids.length; i += 25) {
+    try { add(await helix('/chat/emotes/set', { query: { emote_set_id: ids.slice(i, i + 25) } })); } catch (e) {}
+  }
+  if (S.channel !== ch) return;
+  S.twitchEmotes = map;
+  S.infoTw = map.size ? 'Twitch ' + map.size : '';
+  renderInfo();
 }
 async function loadBadges() {
   const map = {};
@@ -362,7 +390,7 @@ function sys(text) {
   d.textContent = text;
   push(d);
 }
-function renderBody(text, emotesTag) {
+function renderBody(text, emotesTag, isSelf) {
   const frag = document.createDocumentFragment();
   const chars = Array.from(text);
   const ranges = [];
@@ -395,6 +423,8 @@ function renderBody(text, emotesTag) {
       if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(tok)); continue; }
       const e = S.emotes.get(tok);
       if (e) { addEmote('https://cdn.7tv.app/emote/' + e.id + '/2x.webp', tok, e.zw); continue; }
+      const tid = isSelf && S.twitchEmotes.get(tok);
+      if (tid) { addEmote('https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(tid) + '/default/dark/2.0', tok, false); continue; }
       prev = null;
       if (/^https?:\/\//i.test(tok)) {
         const sp = document.createElement('span'); sp.className = 'link'; sp.textContent = tok; frag.appendChild(sp);
@@ -452,7 +482,7 @@ function addChat(m, isSelf) {
   row.appendChild(document.createTextNode(action ? ' ' : ': '));
   const body = document.createElement('span');
   body.className = 'body';
-  body.appendChild(renderBody(text, t.emotes));
+  body.appendChild(renderBody(text, t.emotes, isSelf));
   row.appendChild(body);
   push(row);
 }
@@ -511,6 +541,10 @@ function handle(line) {
     case 'USERSTATE':
       if (m.tags.color !== undefined) S.myColor = m.tags.color;
       if (m.tags.badges !== undefined) S.myBadges = m.tags.badges;
+      if (m.tags['emote-sets'] && m.tags['emote-sets'] !== S.emoteSets) {
+        S.emoteSets = m.tags['emote-sets'];
+        if (S.channelId) loadTwitchEmotes();
+      }
       break;
     case 'PRIVMSG':
       addChat(m, false);
@@ -573,14 +607,15 @@ function join(name) {
   S.channel = name;
   ls.set('channel', name);
   S.channelId = null; S.room = {}; S.emotes = new Map(); S.badges = {};
+  S.twitchEmotes = new Map(); S.emoteSets = ''; S.info7 = ''; S.infoTw = '';
   $('chan').textContent = '#' + name;
-  $('emoteInfo').textContent = '';
+  renderInfo();
   $('chanInput').value = name;
   updateModes();
   deselect();
   sys('Joining #' + name + '…');
   S.chanReady = resolveChannel(name);
-  S.chanReady.then(() => { if (S.channel === name) { loadEmotes(); loadBadges(); } }).catch(e => toast('⚠ ' + e.message));
+  S.chanReady.then(() => { if (S.channel === name) { loadEmotes(); loadBadges(); loadTwitchEmotes(); } }).catch(e => toast('⚠ ' + e.message));
   S.retry = 0;
   connect();
 }
@@ -661,7 +696,7 @@ $('closeSettings').onclick = () => { $('settings').hidden = true; };
 $('joinBtn').onclick = () => { join($('chanInput').value); $('settings').hidden = true; };
 $('reload').onclick = async () => {
   $('settings').hidden = true;
-  try { await S.chanReady; await Promise.all([loadEmotes(), loadBadges()]); toast('Emotes reloaded'); }
+  try { await S.chanReady; await Promise.all([loadEmotes(), loadBadges(), loadTwitchEmotes()]); toast('Emotes reloaded'); }
   catch (e) { toast('⚠ ' + e.message); }
 };
 $('logout').onclick = () => logout('Logged out.');
