@@ -1,5 +1,695 @@
 <!doctype html>
-<html>
-<head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Test</title></head>
-<body><h1>It works</h1></body>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Secret Deluxe</title>
+<meta name="theme-color" content="#0e0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Deluxe">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#0e0e10;--panel:#18181b;--panel2:#1f1f23;--line:#2f2f35;--text:#efeff1;--muted:#adadb8;--accent:#9147ff;--ok:#00c853;--fs:16px;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+button:active{filter:brightness(1.3)}
+button.on{background:var(--accent);border-color:var(--accent)}
+button.danger{background:#5c1a1a;border-color:#8a2b2b}
+button.primary{background:var(--accent);border-color:var(--accent);font-weight:700}
+input[type=text],input:not([type]){font-size:16px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.muted{color:var(--muted)}
+
+#login{height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+#login .card{max-width:360px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}
+#login h1{margin:0 0 8px;font-size:24px}
+#login p{margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.5}
+#loginMsg{color:#ffb4b4;min-height:1.2em}
+#login button{width:100%;padding:12px}
+
+#app{height:100%;height:100dvh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:50%;background:#777;flex:none}
+.dot.ok{background:var(--ok)}.dot.wait{background:#f5a623}
+#chan{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#emoteInfo{font-size:12px;color:var(--muted)}
+#modes{display:flex;gap:8px;overflow-x:auto;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:none}
+#modes::-webkit-scrollbar{display:none}
+#modes button{flex:none;padding:6px 12px;font-size:14px}
+
+#chatwrap{position:relative;flex:1;min-height:0;display:flex}
+#chat{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 0}
+.msg{padding:5px 12px;font-size:var(--fs);line-height:1.5;word-break:break-word;border-left:3px solid transparent}
+.msg.sel{background:#2a2a35;border-left-color:var(--accent)}
+.msg.gone .body{text-decoration:line-through;opacity:.45}
+.msg.first{border-left-color:#00c8af}
+.msg.mention{background:#3a2a10}
+.msg.action .body{font-style:italic}
+.sys{padding:4px 12px;font-size:13px;color:var(--muted)}
+.reply{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{height:18px;width:18px;vertical-align:middle;margin-right:3px}
+.name{font-weight:700}
+.emote{height:28px;width:auto;vertical-align:middle;margin:-4px 1px}
+.estack{position:relative;display:inline-block;vertical-align:middle}
+.estack .zw{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;margin:0}
+.link{color:#a970ff;text-decoration:underline}
+.at{color:#a970ff;font-weight:600}
+#pill{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:var(--accent);border-color:var(--accent);border-radius:999px;font-size:14px;box-shadow:0 2px 10px #0008}
+
+#sheet{background:var(--panel);border-top:1px solid var(--line);padding:10px 12px}
+#sheet .who{font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#sheet .row{display:flex;flex-wrap:wrap;gap:8px}
+
+#composer{display:flex;gap:8px;padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);background:var(--panel);border-top:1px solid var(--line)}
+#composer input{flex:1}
+
+.modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px}
+.modal h2{margin:0}
+.modal label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.modal .inline{display:flex;gap:8px}.modal .inline input{flex:1}
+.modal .row{display:flex;gap:8px;flex-wrap:wrap}
+
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 56px);transform:translateX(-50%);background:#000d;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-size:14px;z-index:20;max-width:90%;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<noscript>This app needs JavaScript.</noscript>
+
+<div id="login" hidden>
+  <div class="card">
+    <h1>Secret Deluxe</h1>
+    <p>Log in with Twitch to read and moderate chat with 7TV emotes.</p>
+    <p id="loginMsg"></p>
+    <button class="primary" id="loginBtn">Log in with Twitch</button>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <span class="dot" id="dot"></span>
+    <span id="chan">#</span>
+    <span id="emoteInfo"></span>
+    <button id="gear" aria-label="Settings">&#9881;</button>
+  </header>
+  <div id="modes">
+    <button id="m-slow" data-mode="slow">Slow</button>
+    <button id="m-subs" data-mode="subs">Subs</button>
+    <button id="m-emote" data-mode="emote">Emote-only</button>
+    <button id="m-follow" data-mode="follow">Followers</button>
+    <button id="m-clear" class="danger" data-mode="clear">Clear chat</button>
+  </div>
+  <div id="chatwrap">
+    <div id="chat"></div>
+    <button id="pill" hidden>&#8595; New messages</button>
+  </div>
+  <div id="sheet" hidden>
+    <div class="who"><span id="who"></span><button id="sheetClose" aria-label="Close">&#10005;</button></div>
+    <div class="row" id="acts"></div>
+  </div>
+  <form id="composer" autocomplete="off">
+    <input id="msgInput" placeholder="Send a message" enterkeyhint="send" autocapitalize="sentences" maxlength="500">
+    <button class="primary" type="submit">Send</button>
+  </form>
+</div>
+
+<div id="settings" class="modal" hidden>
+  <div class="card">
+    <h2>Settings</h2>
+    <div id="whoami" class="muted"></div>
+    <label>Channel
+      <div class="inline">
+        <input id="chanInput" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="joinBtn">Join</button>
+      </div>
+    </label>
+    <label>Text size
+      <input id="fs" type="range" min="13" max="24" step="1">
+    </label>
+    <div class="row">
+      <button id="reload">Reload 7TV emotes</button>
+      <button id="logout" class="danger">Log out</button>
+    </div>
+    <button id="closeSettings">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- config ----------
+const CLIENT_ID = '9tyaysoy3kgs4hvoaxvoywpp7n68yx';
+const REDIRECT_URI = 'https://llasrr.github.io/secret-deluxe/';
+const DEFAULT_CHANNEL = 'llasrr';
+const SCOPES = [
+  'chat:read', 'chat:edit',
+  'moderator:manage:banned_users',
+  'moderator:manage:chat_messages',
+  'moderator:manage:chat_settings'
+];
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const ls = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+const S = {
+  token: null, login: null, userId: null,
+  channel: null, channelId: null, chanReady: null,
+  ws: null, gen: 0, retry: 0,
+  emotes: new Map(), badges: {}, room: {},
+  selected: null, atBottom: true, unread: 0,
+  myColor: '', myBadges: ''
+};
+const chat = $('chat');
+let toastTimer = null;
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function fmtDur(s) {
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.round(s / 60) + 'm';
+  if (s < 86400) return Math.round(s / 3600) + 'h';
+  return Math.round(s / 86400) + 'd';
+}
+function fixColor(c, name) {
+  if (!/^#[0-9a-f]{6}$/i.test(c || '')) {
+    const pal = ['#ff4d4d', '#ff8c1a', '#ffd633', '#33cc66', '#33bbff', '#6c8bff', '#c266ff', '#ff66b3'];
+    let h = 0;
+    for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    c = pal[h % pal.length];
+  }
+  const n = parseInt(c.slice(1), 16);
+  let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  if (L < 0.45) {
+    r = Math.round(r + (255 - r) * 0.5);
+    g = Math.round(g + (255 - g) * 0.5);
+    b = Math.round(b + (255 - b) * 0.5);
+  }
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+// ---------- auth ----------
+function showLogin(msg) {
+  $('app').hidden = true;
+  $('login').hidden = false;
+  $('loginMsg').textContent = msg || '';
+}
+function startLogin() {
+  const st = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now();
+  ls.set('oauth_state', st);
+  const u = new URL('https://id.twitch.tv/oauth2/authorize');
+  u.search = new URLSearchParams({
+    client_id: CLIENT_ID, redirect_uri: REDIRECT_URI, response_type: 'token',
+    scope: SCOPES.join(' '), state: st
+  }).toString();
+  location.href = u.toString();
+}
+function handleRedirect() {
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const query = new URLSearchParams(location.search);
+  const hasToken = hash.has('access_token');
+  const err = query.get('error_description') || query.get('error') || hash.get('error_description') || hash.get('error');
+  if (!hasToken && !err) return null;
+  const state = hash.get('state') || query.get('state');
+  history.replaceState(null, '', location.pathname);
+  if (err) return { error: err };
+  if (state !== ls.get('oauth_state')) return { error: 'Login check failed. Please try again.' };
+  ls.del('oauth_state');
+  ls.set('token', hash.get('access_token'));
+  return {};
+}
+async function validate(tok) {
+  const r = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: 'OAuth ' + tok } });
+  if (r.status === 401) return null;
+  if (!r.ok) throw new Error('validate ' + r.status);
+  return r.json();
+}
+function logout(msg) {
+  S.gen++;
+  if (S.ws) { try { S.ws.close(); } catch (e) {} S.ws = null; }
+  ls.del('token');
+  S.token = null;
+  $('settings').hidden = true;
+  showLogin(msg || '');
+}
+
+async function boot() {
+  const red = handleRedirect();
+  if (red && red.error) { showLogin(red.error); return; }
+  const tok = ls.get('token');
+  if (!tok) { showLogin(); return; }
+  let v;
+  try { v = await validate(tok); }
+  catch (e) { showLogin("Couldn't reach Twitch. Check your connection and reload."); return; }
+  if (!v || v.client_id !== CLIENT_ID) { ls.del('token'); showLogin('Session expired. Log in again.'); return; }
+  if (!SCOPES.every(s => (v.scopes || []).includes(s))) { ls.del('token'); showLogin('New permissions needed. Log in again.'); return; }
+  S.token = tok; S.login = v.login; S.userId = v.user_id;
+  $('login').hidden = true;
+  $('app').hidden = false;
+  $('whoami').textContent = 'Signed in as ' + S.login;
+  join(ls.get('channel') || DEFAULT_CHANNEL);
+  setInterval(async () => {
+    try { if (S.token && !(await validate(S.token))) logout('Session expired. Log in again.'); } catch (e) {}
+  }, 3600 * 1000);
+}
+
+// ---------- Helix ----------
+async function helix(path, opts) {
+  opts = opts || {};
+  const url = new URL('https://api.twitch.tv/helix' + path);
+  for (const k in (opts.query || {})) url.searchParams.set(k, opts.query[k]);
+  const headers = { 'Authorization': 'Bearer ' + S.token, 'Client-Id': CLIENT_ID };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  const r = await fetch(url.toString(), {
+    method: opts.method || 'GET', headers,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const txt = await r.text();
+  let data = null;
+  try { data = txt ? JSON.parse(txt) : null; } catch (e) {}
+  if (!r.ok) {
+    const msg = (data && data.message) || ('HTTP ' + r.status);
+    if (r.status === 401 && !/scope/i.test(msg)) { logout('Session expired. Log in again.'); throw new Error('Session expired'); }
+    throw new Error(msg);
+  }
+  return data;
+}
+async function act(okMsg, fn) {
+  try { await S.chanReady; await fn(); toast(okMsg); }
+  catch (e) { toast('⚠ ' + e.message); }
+}
+const modQ = extra => Object.assign({ broadcaster_id: S.channelId, moderator_id: S.userId }, extra || {});
+const timeoutUser = (uid, secs) => helix('/moderation/bans', { method: 'POST', query: modQ(), body: { data: { user_id: uid, duration: secs, reason: '' } } });
+const banUser = uid => helix('/moderation/bans', { method: 'POST', query: modQ(), body: { data: { user_id: uid, reason: '' } } });
+const unbanUser = uid => helix('/moderation/bans', { method: 'DELETE', query: modQ({ user_id: uid }) });
+const deleteMsg = id => helix('/moderation/chat', { method: 'DELETE', query: modQ({ message_id: id }) });
+const clearChatApi = () => helix('/moderation/chat', { method: 'DELETE', query: modQ() });
+const setSettings = body => helix('/chat/settings', { method: 'PATCH', query: modQ(), body });
+
+// ---------- channel, emotes, badges ----------
+async function resolveChannel(name) {
+  if (name === S.login) { if (S.channel === name) S.channelId = S.userId; return; }
+  const d = await helix('/users', { query: { login: name } });
+  if (!d || !d.data || !d.data[0]) throw new Error('Channel not found');
+  if (S.channel === name) S.channelId = d.data[0].id;
+}
+async function loadEmotes() {
+  const map = new Map();
+  let ok = 0;
+  const add = list => {
+    for (const e of list || []) {
+      if (!e || !e.id || !e.name) continue;
+      const zw = (e.flags & 1) || (e.data && (e.data.flags & 256));
+      map.set(e.name, { id: e.id, zw: !!zw });
+    }
+  };
+  try {
+    const r = await fetch('https://7tv.io/v3/emote-sets/global');
+    if (r.ok) { add((await r.json()).emotes); ok++; }
+  } catch (e) {}
+  try {
+    const r = await fetch('https://7tv.io/v3/users/twitch/' + S.channelId);
+    if (r.ok) { const j = await r.json(); add(j.emote_set && j.emote_set.emotes); ok++; }
+  } catch (e) {}
+  S.emotes = map;
+  $('emoteInfo').textContent = ok ? '7TV ' + map.size : '7TV unavailable';
+}
+async function loadBadges() {
+  const map = {};
+  const add = d => {
+    for (const s of (d && d.data) || []) {
+      map[s.set_id] = map[s.set_id] || {};
+      for (const v of s.versions) map[s.set_id][v.id] = v.image_url_2x || v.image_url_1x;
+    }
+  };
+  try { add(await helix('/chat/badges/global')); } catch (e) {}
+  try { add(await helix('/chat/badges', { query: { broadcaster_id: S.channelId } })); } catch (e) {}
+  S.badges = map;
+}
+
+// ---------- chat rendering ----------
+function push(el) {
+  chat.appendChild(el);
+  while (chat.childElementCount > 400) {
+    const f = chat.firstElementChild;
+    if (f === S.selected) break;
+    f.remove();
+  }
+  if (S.atBottom) chat.scrollTop = chat.scrollHeight;
+  else { S.unread++; $('pill').hidden = false; $('pill').textContent = '↓ ' + S.unread + ' new'; }
+}
+function sys(text) {
+  const d = document.createElement('div');
+  d.className = 'sys';
+  d.textContent = text;
+  push(d);
+}
+function renderBody(text, emotesTag) {
+  const frag = document.createDocumentFragment();
+  const chars = Array.from(text);
+  const ranges = [];
+  if (emotesTag) {
+    for (const grp of emotesTag.split('/')) {
+      const parts = grp.split(':');
+      if (parts.length < 2) continue;
+      for (const r of parts[1].split(',')) {
+        const ab = r.split('-').map(Number);
+        if (Number.isInteger(ab[0]) && Number.isInteger(ab[1])) ranges.push([ab[0], ab[1], parts[0]]);
+      }
+    }
+    ranges.sort((x, y) => x[0] - y[0]);
+  }
+  let prev = null;
+  const addEmote = (src, name, zw) => {
+    const img = document.createElement('img');
+    img.className = 'emote';
+    img.src = src; img.alt = name; img.title = name; img.decoding = 'async';
+    if (zw && prev) { img.classList.add('zw'); prev.appendChild(img); return; }
+    const w = document.createElement('span');
+    w.className = 'estack';
+    w.appendChild(img);
+    frag.appendChild(w);
+    prev = w;
+  };
+  const flush = s => {
+    for (const tok of s.split(/(\s+)/)) {
+      if (!tok) continue;
+      if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(tok)); continue; }
+      const e = S.emotes.get(tok);
+      if (e) { addEmote('https://cdn.7tv.app/emote/' + e.id + '/2x.webp', tok, e.zw); continue; }
+      prev = null;
+      if (/^https?:\/\//i.test(tok)) {
+        const sp = document.createElement('span'); sp.className = 'link'; sp.textContent = tok; frag.appendChild(sp);
+      } else if (tok[0] === '@') {
+        const sp = document.createElement('span'); sp.className = 'at'; sp.textContent = tok; frag.appendChild(sp);
+      } else frag.appendChild(document.createTextNode(tok));
+    }
+  };
+  let i = 0;
+  for (const r of ranges) {
+    if (r[0] < i) continue;
+    if (r[0] > i) flush(chars.slice(i, r[0]).join(''));
+    addEmote('https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(r[2]) + '/default/dark/2.0', chars.slice(r[0], r[1] + 1).join(''), false);
+    i = r[1] + 1;
+  }
+  if (i < chars.length) flush(chars.slice(i).join(''));
+  return frag;
+}
+function addChat(m, isSelf) {
+  const t = m.tags || {};
+  let text = m.trailing || '';
+  let action = false;
+  if (text.startsWith('\x01ACTION ') && text.endsWith('\x01')) { action = true; text = text.slice(8, -1); }
+  const login = (m.prefix || '').split('!')[0];
+  const dn = t['display-name'] || login;
+  const mention = !isSelf && S.login && text.toLowerCase().includes(S.login.toLowerCase());
+  const row = document.createElement('div');
+  row.className = 'msg' + (action ? ' action' : '') + (t['first-msg'] === '1' ? ' first' : '') + (mention ? ' mention' : '');
+  row.dataset.id = t.id || '';
+  row.dataset.uid = t['user-id'] || '';
+  row.dataset.login = login;
+  row.dataset.name = dn;
+  if (t['reply-parent-display-name']) {
+    const rp = document.createElement('div');
+    rp.className = 'reply';
+    rp.textContent = '↪ @' + t['reply-parent-display-name'] + ': ' + (t['reply-parent-msg-body'] || '');
+    row.appendChild(rp);
+  }
+  if (t.badges) {
+    for (const b of t.badges.split(',')) {
+      const p = b.split('/');
+      const url = S.badges[p[0]] && S.badges[p[0]][p[1]];
+      if (url) {
+        const im = document.createElement('img');
+        im.className = 'badge'; im.src = url; im.alt = p[0]; im.title = p[0];
+        row.appendChild(im);
+      }
+    }
+  }
+  const nm = document.createElement('span');
+  nm.className = 'name';
+  nm.style.color = fixColor(t.color, login);
+  nm.textContent = dn;
+  row.appendChild(nm);
+  row.appendChild(document.createTextNode(action ? ' ' : ': '));
+  const body = document.createElement('span');
+  body.className = 'body';
+  body.appendChild(renderBody(text, t.emotes));
+  row.appendChild(body);
+  push(row);
+}
+function markGone(pred) {
+  chat.querySelectorAll('.msg').forEach(el => { if (pred(el)) el.classList.add('gone'); });
+}
+
+// ---------- IRC ----------
+function unescapeTag(v) {
+  return v.replace(/\\(.)/g, (m, c) => ({ s: ' ', ':': ';', r: '\r', n: '\n', '\\': '\\' }[c] || c));
+}
+function parseIRC(line) {
+  const tags = {};
+  let rest = line;
+  if (rest[0] === '@') {
+    const i = rest.indexOf(' ');
+    const raw = rest.slice(1, i);
+    rest = rest.slice(i + 1);
+    for (const p of raw.split(';')) {
+      const j = p.indexOf('=');
+      tags[j < 0 ? p : p.slice(0, j)] = j < 0 ? '' : unescapeTag(p.slice(j + 1));
+    }
+  }
+  let prefix = '';
+  if (rest[0] === ':') {
+    const i = rest.indexOf(' ');
+    prefix = rest.slice(1, i);
+    rest = rest.slice(i + 1);
+  }
+  let trailing = null;
+  const ti = rest.indexOf(' :');
+  if (ti >= 0) { trailing = rest.slice(ti + 2); rest = rest.slice(0, ti); }
+  const parts = rest.split(' ').filter(Boolean);
+  const command = parts.shift();
+  return { tags, prefix, command, params: parts, trailing };
+}
+function setStatus(cls) { $('dot').className = 'dot ' + cls; }
+
+function handle(line) {
+  const m = parseIRC(line);
+  switch (m.command) {
+    case 'PING':
+      if (S.ws && S.ws.readyState === 1) S.ws.send('PONG :tmi.twitch.tv');
+      break;
+    case 'JOIN':
+      if (m.prefix.split('!')[0] === S.login) { setStatus('ok'); S.retry = 0; }
+      break;
+    case 'NOTICE':
+      if (/login authentication failed|improperly formatted auth/i.test(m.trailing || '')) { logout('Twitch rejected the login. Log in again.'); break; }
+      if (m.trailing) sys(m.trailing);
+      break;
+    case 'ROOMSTATE':
+      Object.assign(S.room, m.tags);
+      updateModes();
+      break;
+    case 'USERSTATE':
+      if (m.tags.color !== undefined) S.myColor = m.tags.color;
+      if (m.tags.badges !== undefined) S.myBadges = m.tags.badges;
+      break;
+    case 'PRIVMSG':
+      addChat(m, false);
+      break;
+    case 'USERNOTICE': {
+      const txt = (m.tags['system-msg'] || '') + (m.trailing ? ' — ' + m.trailing : '');
+      if (txt) sys(txt);
+      break;
+    }
+    case 'CLEARMSG': {
+      const id = m.tags['target-msg-id'];
+      if (id) markGone(el => el.dataset.id === id);
+      break;
+    }
+    case 'CLEARCHAT': {
+      const uid = m.tags['target-user-id'];
+      if (uid) {
+        markGone(el => el.dataset.uid === uid);
+        const d = m.tags['ban-duration'];
+        sys((m.trailing || 'A user') + ' was ' + (d ? 'timed out for ' + fmtDur(+d) : 'banned'));
+      } else {
+        markGone(() => true);
+        sys('Chat was cleared');
+      }
+      break;
+    }
+    case 'RECONNECT':
+      if (S.ws) S.ws.close();
+      break;
+  }
+}
+function connect() {
+  const gen = ++S.gen;
+  if (S.ws) { try { S.ws.close(); } catch (e) {} }
+  setStatus('wait');
+  const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  S.ws = ws;
+  ws.onopen = () => {
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    ws.send('PASS oauth:' + S.token);
+    ws.send('NICK ' + S.login);
+    ws.send('JOIN #' + S.channel);
+  };
+  ws.onmessage = e => {
+    if (gen !== S.gen) return;
+    String(e.data).split('\r\n').forEach(l => { if (l) handle(l); });
+  };
+  ws.onclose = () => {
+    if (gen !== S.gen) return;
+    setStatus('wait');
+    const d = Math.min(1000 * Math.pow(2, S.retry), 15000);
+    S.retry++;
+    setTimeout(() => { if (gen === S.gen) connect(); }, d);
+  };
+  ws.onerror = () => {};
+}
+function join(name) {
+  name = (name || '').trim().replace(/^#/, '').toLowerCase();
+  if (!/^[a-z0-9_]{1,25}$/.test(name)) { toast('Invalid channel name'); return; }
+  S.channel = name;
+  ls.set('channel', name);
+  S.channelId = null; S.room = {}; S.emotes = new Map(); S.badges = {};
+  $('chan').textContent = '#' + name;
+  $('emoteInfo').textContent = '';
+  $('chanInput').value = name;
+  updateModes();
+  deselect();
+  sys('Joining #' + name + '…');
+  S.chanReady = resolveChannel(name);
+  S.chanReady.then(() => { if (S.channel === name) { loadEmotes(); loadBadges(); } }).catch(e => toast('⚠ ' + e.message));
+  S.retry = 0;
+  connect();
+}
+
+// ---------- mod UI ----------
+function updateModes() {
+  const r = S.room;
+  const set = (id, on, label) => { const b = $(id); b.classList.toggle('on', !!on); if (label) b.textContent = label; };
+  const slow = r.slow && r.slow !== '0';
+  set('m-slow', slow, slow ? 'Slow ' + r.slow + 's' : 'Slow');
+  set('m-subs', r['subs-only'] === '1');
+  set('m-emote', r['emote-only'] === '1');
+  const f = r['followers-only'];
+  const fon = f !== undefined && f !== '-1';
+  set('m-follow', fon, fon && +f > 0 ? 'Followers ' + f + 'm' : 'Followers');
+}
+async function toggleMode(k) {
+  const r = S.room;
+  if (k === 'clear') {
+    if (!confirm('Clear the whole chat for everyone?')) return;
+    return act('Chat cleared', clearChatApi);
+  }
+  let body;
+  if (k === 'slow') body = (r.slow && r.slow !== '0') ? { slow_mode: false } : { slow_mode: true, slow_mode_wait_time: 30 };
+  if (k === 'subs') body = { subscriber_mode: r['subs-only'] !== '1' };
+  if (k === 'emote') body = { emote_mode: r['emote-only'] !== '1' };
+  if (k === 'follow') body = (r['followers-only'] !== undefined && r['followers-only'] !== '-1') ? { follower_mode: false } : { follower_mode: true, follower_mode_duration: 0 };
+  return act('Updated', () => setSettings(body));
+}
+function deselect() {
+  if (S.selected) S.selected.classList.remove('sel');
+  S.selected = null;
+  $('sheet').hidden = true;
+}
+function select(el) {
+  deselect();
+  S.selected = el;
+  el.classList.add('sel');
+  const uid = el.dataset.uid, id = el.dataset.id, name = el.dataset.name;
+  const self = el.dataset.login === S.login;
+  $('who').textContent = name;
+  const acts = $('acts');
+  acts.textContent = '';
+  const add = (label, cls, fn) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    if (cls) b.className = cls;
+    b.onclick = fn;
+    acts.appendChild(b);
+  };
+  if (id) add('Delete', '', () => act('Message deleted', () => deleteMsg(id)));
+  if (uid && !self) {
+    [['1m', 60], ['10m', 600], ['1h', 3600], ['1d', 86400]].forEach(p =>
+      add(p[0], '', () => act(name + ' timed out ' + p[0], () => timeoutUser(uid, p[1]))));
+    add('Ban', 'danger', () => { if (confirm('Ban ' + name + '?')) act(name + ' banned', () => banUser(uid)); });
+    add('Unban', '', () => act(name + ' unbanned', () => unbanUser(uid)));
+  }
+  $('sheet').hidden = false;
+  if (S.atBottom) chat.scrollTop = chat.scrollHeight;
+}
+
+// ---------- wiring ----------
+chat.addEventListener('scroll', () => {
+  S.atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80;
+  if (S.atBottom) { S.unread = 0; $('pill').hidden = true; }
+}, { passive: true });
+chat.addEventListener('click', e => {
+  const el = e.target.closest('.msg');
+  if (!el) return;
+  if (S.selected === el) deselect(); else select(el);
+});
+$('pill').onclick = () => { chat.scrollTop = chat.scrollHeight; };
+$('sheetClose').onclick = deselect;
+$('loginBtn').onclick = startLogin;
+document.querySelectorAll('#modes button').forEach(b => { b.onclick = () => toggleMode(b.dataset.mode); });
+$('gear').onclick = () => { $('chanInput').value = S.channel || ''; $('settings').hidden = false; };
+$('closeSettings').onclick = () => { $('settings').hidden = true; };
+$('joinBtn').onclick = () => { join($('chanInput').value); $('settings').hidden = true; };
+$('reload').onclick = async () => {
+  $('settings').hidden = true;
+  try { await S.chanReady; await Promise.all([loadEmotes(), loadBadges()]); toast('Emotes reloaded'); }
+  catch (e) { toast('⚠ ' + e.message); }
+};
+$('logout').onclick = () => logout('Logged out.');
+$('fs').value = ls.get('fs') || '16';
+document.documentElement.style.setProperty('--fs', $('fs').value + 'px');
+$('fs').oninput = () => {
+  document.documentElement.style.setProperty('--fs', $('fs').value + 'px');
+  ls.set('fs', $('fs').value);
+};
+$('composer').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = $('msgInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  if (!S.ws || S.ws.readyState !== 1) { toast('Not connected'); return; }
+  S.ws.send('PRIVMSG #' + S.channel + ' :' + text.replace(/[\r\n]+/g, ' '));
+  addChat({ tags: { 'display-name': S.login, color: S.myColor, badges: S.myBadges, 'user-id': S.userId }, prefix: S.login + '!' + S.login, trailing: text }, true);
+  inp.value = '';
+});
+function reviveSocket() {
+  if (S.token && S.channel && (!S.ws || S.ws.readyState > 1)) { S.retry = 0; connect(); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reviveSocket(); });
+window.addEventListener('online', reviveSocket);
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+boot();
+})();
+</script>
+</body>
 </html>
